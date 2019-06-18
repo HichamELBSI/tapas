@@ -1,9 +1,28 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow } = require('electron');
-
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
+
+// Use ipcMain.on to listen to the "bx" channel.
+// Use returnValue to return data (name, version) synchronous message
+// ipcMain.on('bx', (event) => {
+//   event.returnValue = {
+//     name: app.getName(),
+//     version: app.getVersion(),
+//   }
+// })
+
+// Listen on "bx" channel
+// use reply to send an asynchronous message
+ipcMain.on('bx', (event, data) => {
+  // Simple switch on data to reply to the right channel with the right value :D
+  switch (data) {
+    case 'name': event.reply('bx-name', app.getName())
+    case 'version': event.reply('bx-version', app.getVersion())
+  }
+});
 
 function createWindow() {
   // Create the browser window.
@@ -17,8 +36,11 @@ function createWindow() {
       // of this 3 flags
       nodeIntegration: false,
       enableRemoteModule: false,
-      additionalArguments: []
-      // ------
+      additionalArguments: [],
+      // This script will be loaded before others scripts.
+      // Preload script has access to node APIs no matter whether node integration is turned on or off.
+      // So, I will use that preload script to set window.bx :)
+      preload: path.join(__dirname, 'preload.js')
     },
   });
 
@@ -26,7 +48,7 @@ function createWindow() {
   mainWindow.loadFile('index.html').catch(console.error);
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
