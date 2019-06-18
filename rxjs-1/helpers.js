@@ -1,5 +1,5 @@
 const {fromEvent} = require('rxjs');
-const { filter, throttleTime, buffer } = require('rxjs/operators')
+const { filter, throttleTime, buffer, bufferTime, takeWhile } = require('rxjs/operators')
 
 // Simple function to calculate speed between two emitted values.
 const calculateSpeed = (from, to) => {
@@ -17,8 +17,13 @@ const data$ = (race) => fromEvent(race, 'data');
 const myObservable = (race, carName) => data$(race)
     .pipe(
         filter(data => data.carName === carName),
-        // Keep values of data in a buffer every 200ms before emit to calculate speed
-        buffer(data$(race).pipe(throttleTime(200))),
+        // Old Solution : Keep values of data in a buffer every 200ms before emit to calculate speed
+        // buffer(data$(race).pipe(throttleTime(200))),
+        
+        // New solution : Use bufferTime to keep values of data in a buffer every 200ms 
+        // and set the maxBufferSize to 2 to avoid buffer growing.
+        // A buffer interval is not needed in this case.
+        bufferTime(200, null, 2)
     );
 
 module.exports = {calculateSpeed, myObservable, data$};
